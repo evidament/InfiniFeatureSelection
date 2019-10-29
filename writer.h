@@ -1,0 +1,1 @@
+void write_data(float* iqr, float* sp, int size, float index);
