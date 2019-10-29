@@ -5,12 +5,12 @@ import sys
 from _writer import ffi, lib
 import _writer
 
-BUFFER_SIZE = 1000
+BUFFER_SIZE = 100000
 
 cffi_support.register_module(_writer)
 write = _writer.lib.write_data
 
-@jit((types.Array(types.float32, 2, "A"), types.Array(types.float32, 2, "A")), nopython=True, nogil=True, parallel=True, fastmath=True, cache=False)
+@jit((types.Array(types.float32, 2, "A"), types.Array(types.float32, 2, "A")), nopython=True, nogil=True, parallel=True, fastmath=True, cache=True)
 def activity_score(a, _):
     """Calculate activity score for column pairs
     
