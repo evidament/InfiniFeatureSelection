@@ -5,15 +5,15 @@ import sys
 import time
 import logging
 
-rows = 3000
-cols = 300
+# rows = 3000
+# cols = 300
 
 def generate_data(rows, cols):
-    logging.info("\nGenerating data...")
+    logging.info("Generating data...")
     a = np.random.random(size=(rows, cols)).astype(np.float32)
 
     logging.info("Generated data")
-    logging.info(cols*(cols-1)//2, "combinations\n")
+    logging.info(f"{cols*(cols-1)//2} combinations")
     return a
 
 def benchmark(func, args, iter_count=None):
@@ -27,7 +27,7 @@ if __name__=="__main__":
     a = generate_data(rows, cols)
 
     logging.info("Compiling...")
-    from utils import activity_score
+    from activity_score import activity_score
     logging.info("Compiled\n")
 
     benchmark(activity_score, (a, a), cols*(cols-1)//2)
