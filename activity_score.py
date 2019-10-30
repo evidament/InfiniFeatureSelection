@@ -4,14 +4,15 @@ import time
 import sys
 from _writer import ffi, lib
 import _writer
+# from ._writer import ffi, lib
+# from . import _writer
 
-BUFFER_SIZE = 1000
 
 cffi_support.register_module(_writer)
 write = _writer.lib.write_data
 
-@jit((types.Array(types.float32, 2, "A"), types.Array(types.float32, 2, "A")), nopython=True, nogil=True, parallel=False, fastmath=False, cache=False)
-def activity_score(a, _):
+@jit((types.Array(types.float32, 2, "A"), types.int32), nopython=True, nogil=True, parallel=True, fastmath=True, cache=False)
+def activity_score(a, buffer_size):
     """Calculate activity score for column pairs
     
     Args:
@@ -21,19 +22,25 @@ def activity_score(a, _):
     Returns:
         np.array[np.float32]: 1D array with activity scores for each column pair
     """
+
     rows, cols = a.shape
     combinations_count = cols*cols
+    returnable = False
+    
+    if combinations_count<buffer_size:
+        buffer_size = combinations_count+1
+        returnable = True
 
     iqr = np.zeros(cols, dtype=np.float32)
     rank_arr = np.zeros((cols, rows), dtype=np.float32)
-    checkpoint = combinations_count//10
+    checkpoint = combinations_count//5
 
-    for index_base in range(0, cols*cols//BUFFER_SIZE+1):
-        max_iqr = np.zeros(BUFFER_SIZE, dtype=np.float32)
-        sp_coeff = np.zeros(BUFFER_SIZE, dtype=np.float32)
+    for index_base in prange(0, combinations_count//buffer_size+1):
+        max_iqr = np.zeros(buffer_size, dtype=np.float32)
+        sp_coeff = np.zeros(buffer_size, dtype=np.float32)
 
-        for i in range(BUFFER_SIZE):
-            index = index_base*BUFFER_SIZE + i
+        for i in range(buffer_size):
+            index = index_base*buffer_size + i
             j = index//cols
             k = index%cols
 
@@ -67,4 +74,6 @@ def activity_score(a, _):
             max_iqr[i] = m_iqr
             sp_coeff[i] = 1-rho
 
-        write(max_iqr.ctypes, sp_coeff.ctypes, BUFFER_SIZE, cols, float(index_base))
+        write(max_iqr.ctypes, sp_coeff.ctypes, buffer_size, cols, float(index_base))
+        if returnable:
+            return max_iqr, sp_coeff
