@@ -13,14 +13,18 @@ write = _writer.lib.write_data
 
 @jit((types.Array(types.float32, 2, "A"), types.int32), nopython=True, nogil=True, parallel=True, fastmath=True, cache=False)
 def activity_score(a, buffer_size):
-    """Calculate activity score for column pairs
+    """Calculate activity score for column pairs. If
     
     Args:
         a (np.array[np.float32]): 2d array with data
-        combinations (np.array[np.int32]): array specifying combinations in format (index, col1_id, col2_id)
+        buffer_size (int32): size of buffer per thread. If buffer_size>a.shape[1]**2, "small data" mode is used
     
     Returns:
-        np.array[np.float32]: 1D array with activity scores for each column pair
+        if "small data" mode:
+            np.array[np.float32]: 1D array with maximum interquantile range for each column pair
+            np.array[np.float32]: 1D array with (1-spearman correlation) score for each column pair
+        else:
+            None, output gets saved into "results/" directory
     """
 
     rows, cols = a.shape
